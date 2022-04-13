@@ -1,41 +1,70 @@
 package com.coded.storagetutorial.ui
 
+import android.app.Activity
+import android.net.Uri
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.FloatingActionButton
+import androidx.compose.material.Icon
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Camera
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.rememberImagePainter
 import com.coded.storagetutorial.Screen
-import com.coded.storagetutorial.data.models.InternalStoragePhoto
+import com.coded.storagetutorial.storage.ExternalStorage
 import com.coded.storagetutorial.storage.InternalStorage
 import com.nesyou.staggeredgrid.LazyStaggeredGrid
 import com.nesyou.staggeredgrid.StaggeredCells
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Home(navController: NavController, storage: InternalStorage) {
+fun Home(
+    navController: NavController,
+    storage: InternalStorage,
+    externalStorage: ExternalStorage,
+    scope: CoroutineScope
+) {
 
-    var change by remember {
-        mutableStateOf(false)
-    }
+    val internalStoragePhotos by storage.photos
 
-    var photos by remember {
-        mutableStateOf(emptyList<InternalStoragePhoto>())
-    }
+    val externalStoragePhotos by externalStorage.photos
 
-    LaunchedEffect(key1 = change) {
-        photos = storage.loadPhotoFromInternalStorage()
+    var imageUri: Uri? = null
+
+    val launcher = rememberLauncherForActivityResult(
+            ActivityResultContracts.StartIntentSenderForResult()
+        ) {
+            if (it.resultCode == Activity.RESULT_OK) {
+                if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+                    scope.launch {
+                        externalStorage.deletePhotoFromExternalStorage(imageUri ?: return@launch)
+                    }
+                }
+            }
+        }
+
+    DisposableEffect(key1 = true) {
+        externalStorage.registerObserver()
+        externalStorage.loadPhotos()
+        storage.registerObserver()
+        storage.loadPhotos()
+        onDispose {
+            storage.removeObserver()
+            externalStorage.removeObserver()
+        }
     }
 
     Scaffold(
@@ -48,21 +77,37 @@ fun Home(navController: NavController, storage: InternalStorage) {
         },
         modifier = Modifier.fillMaxSize()
     ) {
-        LazyStaggeredGrid(cells = StaggeredCells.Adaptive(minSize = 180.dp)) {
-            items(photos.size) { index ->
-                val random: Double = 100 + Math.random() * (500 - 100)
-                val photo = photos[index]
-                Image(
-                    bitmap = photo.bitmap.asImageBitmap(),
-                    contentDescription = photo.name,
-                    modifier = Modifier.height(random.dp).padding(2.dp),
-                    contentScale = ContentScale.Crop
-                )
-            }
-            if(photos.isEmpty()) {
+        ExternalStoragePermission {
+            LazyStaggeredGrid(cells = StaggeredCells.Adaptive(minSize = 180.dp)) {
                 item {
-                    Text(text = "Photos are empty")
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(text = "Internal Storage Photos", fontSize = 27.sp)
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
                 }
+                renderInternalStoragePhotos(
+                    internalStoragePhotos,
+                    scope,
+                    storage
+                )
+                item {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(text = "External Storage Photos", fontSize = 27.sp)
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+                }
+                renderExternalStoragePhotos(
+                    externalStoragePhotos,
+                    scope,
+                    externalStorage,
+                    changeImageUri = {
+                        imageUri = it
+                    },
+                    launchRequest = {
+                        launcher.launch(it)
+                    }
+                )
+
             }
         }
     }

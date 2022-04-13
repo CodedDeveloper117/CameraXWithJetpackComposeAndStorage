@@ -31,7 +31,7 @@ fun Permission(
 }
 
 @Composable
-private fun Rationale(
+fun Rationale(
     text: String,
     onRequestPermission: () -> Unit
 ) {

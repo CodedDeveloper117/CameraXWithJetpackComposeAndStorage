@@ -55,3 +55,9 @@ suspend fun ImageCapture.takePhoto(
         })
     }
 }
+
+suspend fun <T> returnWithIODispatchers(
+    content: () -> T
+): T = withContext(Dispatchers.IO) {
+    content()
+}

@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.coded.storagetutorial.storage.ExternalStorage
 import com.coded.storagetutorial.storage.InternalStorage
 import com.coded.storagetutorial.ui.Home
 import com.coded.storagetutorial.ui.camera.MainContent
@@ -22,14 +23,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val context = LocalContext.current
-            val storage = InternalStorage(context)
+            val scope = rememberCoroutineScope()
+            val storage = InternalStorage(context, scope)
+            val externalStorage = ExternalStorage(context, scope)
             StorageTutorialTheme {
                 NavHost(navController = navController, startDestination = Screen.Home.route) {
                     composable(Screen.Home.route) {
-                        Home(navController, storage)
+                        Home(navController, storage, externalStorage, scope)
                     }
                     composable(Screen.Camera.route) {
-                        MainContent(storage = storage)
+                        MainContent(navController = navController, storage = storage, scope = scope, externalStorage = externalStorage)
                     }
                 }
             }
