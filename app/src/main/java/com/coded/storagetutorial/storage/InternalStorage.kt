@@ -12,6 +12,7 @@ import java.io.IOException
 class InternalStorage(
     private val context: Context
 ) {
+
     fun savePhotoToInternalStorage(filename: String, bitmap: Bitmap): Boolean {
         return try {
             context.openFileOutput("$filename.jpg", ComponentActivity.MODE_PRIVATE).use { outputStream ->

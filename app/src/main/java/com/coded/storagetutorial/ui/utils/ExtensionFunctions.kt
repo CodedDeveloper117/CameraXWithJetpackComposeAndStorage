@@ -46,7 +46,6 @@ suspend fun ImageCapture.takePhoto(
         val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
         takePicture(outputOptions, executor, object: ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                val savedUri = Uri.fromFile(file)
                 continuation.resume(file)
             }
 

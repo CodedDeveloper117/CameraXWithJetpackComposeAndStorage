@@ -2,47 +2,66 @@ package com.coded.storagetutorial.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.outlined.Camera
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import coil.compose.rememberImagePainter
+import com.coded.storagetutorial.Screen
 import com.coded.storagetutorial.data.models.InternalStoragePhoto
+import com.coded.storagetutorial.storage.InternalStorage
+import com.nesyou.staggeredgrid.LazyStaggeredGrid
+import com.nesyou.staggeredgrid.StaggeredCells
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Home(
-    list: List<InternalStoragePhoto>,
-    onCameraClick: () -> Unit
-) {
-    LazyVerticalGrid(cells = GridCells.Fixed(2)) {
-        items(list.size) { index ->
-            Image(
-                bitmap = list[index].bitmap.asImageBitmap(),
-                contentDescription = list[index].name
-            )
-        }
-        item {
-            Box(
-                modifier = Modifier
-                    .padding(10.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color.White.copy(alpha = 0.3f))
-                    .padding(10.dp)
-            ) {
-                IconButton(onClick = { onCameraClick() }) {
-                    Icon(imageVector = Icons.Outlined.ShoppingCart, contentDescription = "none")
+fun Home(navController: NavController, storage: InternalStorage) {
+
+    var change by remember {
+        mutableStateOf(false)
+    }
+
+    var photos by remember {
+        mutableStateOf(emptyList<InternalStoragePhoto>())
+    }
+
+    LaunchedEffect(key1 = change) {
+        photos = storage.loadPhotoFromInternalStorage()
+    }
+
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = {
+                navController.navigate(Screen.Camera.route)
+            }) {
+                Icon(imageVector = Icons.Outlined.Camera, contentDescription = "Camera")
+            }
+        },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        LazyStaggeredGrid(cells = StaggeredCells.Adaptive(minSize = 180.dp)) {
+            items(photos.size) { index ->
+                val random: Double = 100 + Math.random() * (500 - 100)
+                val photo = photos[index]
+                Image(
+                    bitmap = photo.bitmap.asImageBitmap(),
+                    contentDescription = photo.name,
+                    modifier = Modifier.height(random.dp).padding(2.dp),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            if(photos.isEmpty()) {
+                item {
+                    Text(text = "Photos are empty")
                 }
             }
         }
