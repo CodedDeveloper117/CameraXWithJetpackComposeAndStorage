@@ -14,6 +14,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -101,37 +103,44 @@ fun ExternalStoragePermission(
 
 }
 
-fun StaggeredGridScope.renderExternalStoragePhotos(
+fun LazyListScope.renderExternalStoragePhotos(
     photos: List<SharedStoragePhoto>,
     scope: CoroutineScope,
     storage: ExternalStorage,
     changeImageUri: (Uri) -> Unit,
     launchRequest: (IntentSenderRequest) -> Unit,
 ) {
-    items(photos.size) { index ->
-        val random: Double = 100 + Math.random() * (500 - 100)
-        val photo = photos[index]
-        Image(
-            rememberImagePainter(photo.contentUri),
-            contentDescription = photo.name,
-            modifier = Modifier
-                .height(random.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onPress = { /* Called when the gesture starts */ },
-                        onDoubleTap = {
-                            scope.launch {
-                                storage.deletePhotoFromExternalStorage(photo.contentUri) { request, uri ->
-                                    changeImageUri(uri)
-                                    launchRequest(request)
-                                }
-                            }
-                        },
-                    )
-                }
-                .padding(2.dp),
-            contentScale = ContentScale.Crop
-        )
+    val windowed = photos.windowed(2, 2, true)
+    items(windowed) { row ->
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            row.forEach { photo ->
+                val random: Double = 100 + (0.5 * (500 - 100))
+                Image(
+                    rememberImagePainter(photo.contentUri),
+                    contentDescription = photo.name,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(random.dp)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = { /* Called when the gesture starts */ },
+                                onLongPress = {
+                                    scope.launch {
+                                        storage.deletePhotoFromExternalStorage(photo.contentUri) { request, uri ->
+                                            changeImageUri(uri)
+                                            launchRequest(request)
+                                        }
+                                    }
+                                },
+                            )
+                        }
+                        .padding(2.dp),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
     }
     if (photos.isEmpty()) {
         item {
@@ -141,23 +150,25 @@ fun StaggeredGridScope.renderExternalStoragePhotos(
 }
 
 
-fun StaggeredGridScope.renderInternalStoragePhotos(
+fun LazyListScope.renderInternalStoragePhotos(
     photos: List<InternalStoragePhoto>,
     scope: CoroutineScope,
     storage: InternalStorage,
 ) {
     items(photos.size) { index ->
-        val random: Double = 100 + Math.random() * (500 - 100)
+        val height: Double = 100 + (0.7 * (500 - 100))
+        val width: Double = 100 + (0.4 * (500 - 100))
         val photo = photos[index]
         Image(
             bitmap = photo.bitmap.asImageBitmap(),
             contentDescription = photo.name,
             modifier = Modifier
-                .height(random.dp)
+                .height(height.dp)
+                .width(width.dp)
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onPress = { /* Called when the gesture starts */ },
-                        onDoubleTap = {
+                        onLongPress = {
                             scope.launch {
                                 scope.launch {
                                     storage.deletePhotoFromInternalStorage(photo.name)

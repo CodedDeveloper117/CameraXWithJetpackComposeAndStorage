@@ -7,6 +7,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
@@ -78,23 +80,25 @@ fun Home(
         modifier = Modifier.fillMaxSize()
     ) {
         ExternalStoragePermission {
-            LazyStaggeredGrid(cells = StaggeredCells.Adaptive(minSize = 180.dp)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                // My Books section
                 item {
-                    Column(modifier = Modifier.padding(10.dp)) {
-                        Text(text = "Internal Storage Photos", fontSize = 27.sp)
-                        Spacer(modifier = Modifier.height(10.dp))
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text("Internal Storage Images", fontSize = 26.sp, modifier = Modifier.padding(10.dp))
+                        LazyRow {
+                            renderInternalStoragePhotos(
+                                internalStoragePhotos,
+                                scope,
+                                storage
+                            )
+                        }
                     }
+
                 }
-                renderInternalStoragePhotos(
-                    internalStoragePhotos,
-                    scope,
-                    storage
-                )
                 item {
-                    Column(modifier = Modifier.padding(10.dp)) {
-                        Text(text = "External Storage Photos", fontSize = 27.sp)
-                        Spacer(modifier = Modifier.height(10.dp))
-                    }
+                    Text("External Storage Images", fontSize = 26.sp, modifier = Modifier.padding(10.dp))
                 }
                 renderExternalStoragePhotos(
                     externalStoragePhotos,
@@ -107,7 +111,6 @@ fun Home(
                         launcher.launch(it)
                     }
                 )
-
             }
         }
     }
