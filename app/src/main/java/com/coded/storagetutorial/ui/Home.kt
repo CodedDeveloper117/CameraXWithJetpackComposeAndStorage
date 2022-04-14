@@ -61,10 +61,8 @@ fun Home(
     DisposableEffect(key1 = true) {
         externalStorage.registerObserver()
         externalStorage.loadPhotos()
-        storage.registerObserver()
         storage.loadPhotos()
         onDispose {
-            storage.removeObserver()
             externalStorage.removeObserver()
         }
     }

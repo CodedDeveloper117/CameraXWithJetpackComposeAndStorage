@@ -21,39 +21,12 @@ class InternalStorage(
     private val scope: CoroutineScope
 ) {
 
-    private var contentObserver: ContentObserver? = null
-
     val photos = mutableStateOf(emptyList<InternalStoragePhoto>())
 
     fun loadPhotos() {
         scope.launch {
             photos.value = loadPhotoFromInternalStorage()
         }
-    }
-
-
-    fun registerObserver(): ContentObserver {
-
-        contentObserver = object : ContentObserver(null) {
-            override fun onChange(selfChange: Boolean) {
-                loadPhotos()
-            }
-        }.also {
-            context.contentResolver.registerContentObserver(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                true,
-                it
-            )
-        }
-        return contentObserver!!
-    }
-
-    fun removeObserver() {
-        contentObserver?.let {
-            context.contentResolver.unregisterContentObserver(it)
-        }
-
-        contentObserver = null
     }
 
     suspend fun savePhotoToInternalStorage(filename: String, bitmap: Bitmap): Boolean {
@@ -75,7 +48,11 @@ class InternalStorage(
     suspend fun deletePhotoFromInternalStorage(filename: String): Boolean {
         return returnWithIODispatchers {
             try {
-                context.deleteFile(filename)
+                val isSuccessful = context.deleteFile(filename)
+                if(isSuccessful) {
+                    loadPhotos()
+                }
+                isSuccessful
             }catch (e: IOException){
                 e.printStackTrace()
                 false
@@ -83,7 +60,7 @@ class InternalStorage(
         }
     }
 
-    suspend fun loadPhotoFromInternalStorage(): List<InternalStoragePhoto> {
+    private suspend fun loadPhotoFromInternalStorage(): List<InternalStoragePhoto> {
         return returnWithIODispatchers {
             val files = context.filesDir.listFiles()
             files?.filter {

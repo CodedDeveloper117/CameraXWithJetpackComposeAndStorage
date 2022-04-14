@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
 import com.coded.storagetutorial.Screen
 import com.coded.storagetutorial.data.models.InternalStoragePhoto
@@ -144,7 +145,7 @@ fun LazyListScope.renderExternalStoragePhotos(
     }
     if (photos.isEmpty()) {
         item {
-            Text(text = "Photos are empty")
+            Text(text = "Photos are empty", fontSize = 22.sp, modifier = Modifier.padding(10.dp))
         }
     }
 }
@@ -183,7 +184,7 @@ fun LazyListScope.renderInternalStoragePhotos(
     }
     if (photos.isEmpty()) {
         item {
-            Text(text = "Photos are empty")
+            Text(text = "Photos are empty", fontSize = 22.sp, modifier = Modifier.padding(10.dp))
         }
     }
 }
